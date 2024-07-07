@@ -21,11 +21,40 @@
   <link rel="stylesheet" href="RacingGame.css">
   <link rel="stylesheet" href="https://storage.streamdps.com/css/core.min.css">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/jquery.marquee/1.4.0/jquery.marquee.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+
   <style>
-    .highlight {
-      background-color: #3b82f6 !important;
+    body {
+      background: transparent;
+      font-family: 'Roboto', sans-serif;
       color: white;
+    }
+
+    .follower-item {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      color: #fff;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .highlight {
+      background-color: #0facb7 !important;
+      color: white;
+      animation: pulseHighlight 1s infinite;
+    }
+
+    .highlightred {
+      background-color: #430202 !important;
+      color: white;
+      animation: pulseHighlight 1s infinite;
     }
 
     .online,
@@ -51,28 +80,62 @@
       0% {
         opacity: 1;
       }
+
       50% {
         opacity: 0;
       }
+
       100% {
         opacity: 1;
       }
     }
 
-    body {
-      background: transparent;
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
+
+    @keyframes pulseHighlight {
+      0% {
+        box-shadow: 0 0 10px #3b82f6;
+      }
+
+      50% {
+        box-shadow: 0 0 20px #3b82f6;
+      }
+
+      100% {
+        box-shadow: 0 0 10px #3b82f6;
+      }
+    }
+
+    #myModal {
+      z-index: 50;
+    }
+
+    /* #followers-list.modal-active {
+      filter: blur(5px);
+    } */
   </style>
 </head>
 
-<body class="h-screen flex flex-col items-center justify-center text-white">
-  <div id="followers-list" class="bg-transparent rounded-lg shadow-lg p-6 w-full max-w-3xl overflow-auto h-[80vh] mt-52 mb-52 text-black"></div>
-
+<body class="h-screen flex flex-col items-center justify-center">
+  <div id="followers-list"
+    class="bg-transparent rounded-lg shadow-lg p-6 w-full max-w-3xl overflow-auto h-[80vh] mt-52 mb-52 text-black">
+  </div>
   <div id="myModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
-    <div class="bg-white rounded-lg p-6 shadow-lg text-center text-black bg-opacity-50">
-      <p id="modal-text"></p>
+    <div class="bg-white rounded-lg p-10 shadow-lg text-center text-black bg-opacity-90 max-w-3xl">
+      <p id="modal-text" class="text-3xl font-bold"></p>
     </div>
   </div>
+
 
   <script>
     let displayTimeout;
@@ -86,11 +149,18 @@
     function showModal(username, followerCount) {
       const modal = document.getElementById("myModal");
       const modalText = document.getElementById("modal-text");
+      const followersList = document.getElementById('followers-list');
       modalText.innerHTML = `<strong>${username}</strong> <strong>${followerCount}</strong> takipçi qazandı!`;
       modal.classList.remove('hidden');
+      followersList.classList.add('modal-active');
       gsap.fromTo(modal, { opacity: 0 }, { opacity: 1, duration: 0.5 });
       setTimeout(() => {
-        gsap.to(modal, { opacity: 0, duration: 0.5, onComplete: () => modal.classList.add('hidden') });
+        gsap.to(modal, {
+          opacity: 0, duration: 0.5, onComplete: () => {
+            modal.classList.add('hidden');
+            followersList.classList.remove('modal-active');
+          }
+        });
       }, 3000);
     }
 
@@ -104,18 +174,23 @@
       followersList.innerHTML = '';
       userList.forEach((follower, index) => {
         const followerItem = document.createElement('div');
-        followerItem.classList.add('p-2', 'border-b', 'border-gray-200', 'flex', 'justify-between', 'items-center', 'rounded-lg', 'mb-2', 'bg-opacity-50');
+        followerItem.classList.add('follower-item');
         if (follower.isNew) {
           followerItem.classList.add('highlight');
           gsap.from(followerItem, { scale: 0.5, duration: 0.5, ease: "back.out(1.7)" });
           follower.isNew = false;
         } else {
+          followerItem.classList.add('highlightred');
           gsap.fromTo(followerItem, { y: -10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5 });
         }
         followerItem.innerHTML = `
-          <span>${index + 1}. ${follower.username}</span>
-          <span>Toplam: ${follower.followCount} : Göndərilən: ${follower.sendFollowCount}</span>
-          <span class="${follower.active ? 'online' : 'offline'}"></span>
+<div class="flex flex-col space-y-1">
+  <span class="text-2xl font-extrabold" style="font-family: 'Poppins', sans-serif;">${index + 1}. ${follower.username}</span>
+  <span class="text-2xl font-extrabold" style="font-family: 'Poppins', sans-serif;">Toplam qazanılan takipçi: ${follower.followCount} | Göndərilən: ${follower.sendFollowCount}</span>
+</div>
+<span class="${follower.active ? 'online' : 'offline'}"></span>
+
+
         `;
         followersList.appendChild(followerItem);
       });
