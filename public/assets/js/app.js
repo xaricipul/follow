@@ -11,7 +11,7 @@ let messagesQueue = [];
 $(document).ready(() => {
 
     setTimeout(function () {
-        let targetLive = "aniaa4444";
+        let targetLive = "mariuspetra15";
         connect(targetLive);
     }, 5000);
 
@@ -148,17 +148,17 @@ function add_takip(user_name, number) {
     fetch('http://95.217.210.174:2929/add_takip', {
         method: 'POST',
         headers: {
-             'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: JSON.stringify({ user_name, number })
     })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Followers added successfully:', data);
-    })
-    .catch(error => {
-        console.error('Error adding followers:', error);
-    });
+        .then(response => response.json())
+        .then(data => {
+            console.log('Followers added successfully:', data);
+        })
+        .catch(error => {
+            console.error('Error adding followers:', error);
+        });
 }
 
 
@@ -170,31 +170,31 @@ function checkUser(userNameList) {
         },
         body: JSON.stringify({ userNameList })
     })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Check result for userNameList:', data);
+        .then(response => response.json())
+        .then(data => {
+            console.log('Check result for userNameList:', data);
 
-        // Gelen verinin doğru formatta olup olmadığını kontrol ediyoruz
-        if (Array.isArray(data)) {
-            userNameList = data.map(item => {
-                return {
-                    username: item.username,
-                    giftCount: item.giftCount,
-                    followCount: item.followCount,
-                    sendFollowCount: item.sendFollowCount,
-                    active: item.active,
-                    isNew: item.isNew
-                };
-            });
+            // Gelen verinin doğru formatta olup olmadığını kontrol ediyoruz
+            if (Array.isArray(data)) {
+                userNameList = data.map(item => {
+                    return {
+                        username: item.username,
+                        giftCount: item.giftCount,
+                        followCount: item.followCount,
+                        sendFollowCount: item.sendFollowCount,
+                        active: item.active,
+                        isNew: item.isNew
+                    };
+                });
 
-            console.log('Updated userNameList:', userNameList);
-        } else {
-            console.error('Beklenmeyen veri formatı:', data);
-        }
-    })
-    .catch(error => {
-        console.error('Kullanıcı listesini kontrol ederken hata oluştu:', error);
-    });
+                console.log('Updated userNameList:', userNameList);
+            } else {
+                console.error('Beklenmeyen veri formatı:', data);
+            }
+        })
+        .catch(error => {
+            console.error('Kullanıcı listesini kontrol ederken hata oluştu:', error);
+        });
 }
 
 
@@ -208,11 +208,7 @@ function checkActiveStatus(user) {
 
 // Call check_user for each active username in the list every 30 seconds
 setInterval(() => {
-    userNameList
-        .filter(user => user.active === 1) // Filter users where active is 1
-        .forEach(user => {
-            check_user(user.username);
-        });
+    checkUser(userNameList);
 }, 30000); // 30000 milliseconds = 30 seconds
 // Example usage: call this function when you want to add followers
 // add_takip('exampleUser', 100);
