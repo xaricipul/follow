@@ -5,13 +5,13 @@ let defaultRate = 1.2;
 let usernames = new Map();
 let connection = new TikTokIOConnection(undefined);
 let nextId = 1;
-userNameList = [];
+userList = [];
 
 let messagesQueue = [];
 $(document).ready(() => {
 
     setTimeout(function () {
-        let targetLive = "aniaa4444";
+        let targetLive = "alisa.macheer";
         connect(targetLive);
     }, 5000);
 
@@ -166,7 +166,7 @@ function checkUser(userNameList) {
     fetch('http://95.217.210.174:2929/check_order', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+             'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: JSON.stringify({ userNameList })
     })
@@ -174,20 +174,20 @@ function checkUser(userNameList) {
         .then(data => {
             console.log('Check result for userNameList:', data);
 
-            // Gelen verinin doğru formatta olup olmadığını kontrol ediyoruz
             if (Array.isArray(data)) {
-                userNameList = data.map(item => {
-                    return {
-                        username: item.username,
-                        giftCount: item.giftCount,
-                        followCount: item.followCount,
-                        sendFollowCount: item.sendFollowCount,
-                        active: item.active,
-                        isNew: item.isNew
-                    };
+                userList = userList.map(user => {
+                    let matchedData = data.find(item => item.userName === user.userName );
+                    if (matchedData) {
+                        return {
+                            ...user,
+                            sendFollowCount: 5,
+                            active: matchedData.active
+                        };
+                    }
+                    return user; 
                 });
 
-                console.log('Updated userNameList:', userNameList);
+                console.log('Updated userList:', userList);
             } else {
                 console.error('Beklenmeyen veri formatı:', data);
             }
@@ -197,21 +197,11 @@ function checkUser(userNameList) {
         });
 }
 
-
-// Call check_user for each username in the list every 30 seconds
-function checkActiveStatus(user) {
-    if (user.followCount === user.sendFollowCount) {
-        user.active = 0;
-        console.log(`User ${user.username} is now inactive.`);
-    }
-}
-
-// Call check_user for each active username in the list every 30 seconds
 setInterval(() => {
-    checkUser(userNameList);
-}, 30000); // 30000 milliseconds = 30 seconds
-// Example usage: call this function when you want to add followers
-// add_takip('exampleUser', 100);
+    let activeUsers = userList.filter(user => user.active === 1);
+
+    checkUser(activeUsers);
+}, 30000); 
 
 connection.on('gift', (data) => {
     let userName = data.uniqueId;
@@ -226,16 +216,16 @@ connection.on('gift', (data) => {
 
         let userFound = false;
 
-        for (let i = 0; i < userNameList.length; i++) {
-            if (userNameList[i].username === userName) {
+        for (let i = 0; i < userList.length; i++) {
+            if (userList[i].username === userName) {
                 userFound = true;
                 const followCount = calculateFollowCount(giftCount);
-                userNameList[i].giftCount += giftCount;
-                userNameList[i].followCount += followCount;
-                userNameList[i].active = userNameList[i].giftCount >= 10 ? 1 : 0;
+                userList[i].giftCount += giftCount;
+                userList[i].followCount += followCount;
+                userList[i].active = userList[i].giftCount >= 10 ? 1 : 0;
 
-                if (userNameList[i].active) {
-                    add_takip(userNameList[i].username, userNameList[i].followCount);
+                if (userList[i].active) {
+                    add_takip(userList[i].username, userList[i].followCount);
                 }
 
                 const responses = [
@@ -276,7 +266,7 @@ connection.on('gift', (data) => {
                 isNew: true
             };
 
-            userNameList.push(user);
+            userList.push(user);
             showModal(userName, followCount);
             updateFollowersList();
             scrollToBottom();
