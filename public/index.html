@@ -66,7 +66,6 @@
 </head>
 
 <body class="h-screen flex flex-col items-center justify-center text-white">
-
   <div id="followers-list" class="bg-transparent rounded-lg shadow-lg p-6 w-full max-w-3xl overflow-auto h-[80vh] mt-52 mb-52 text-black"></div>
 
   <div id="myModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
@@ -78,6 +77,11 @@
   <script>
     let displayTimeout;
     let scrollInterval;
+    // const userList = [
+    //   { username: 'User1', followCount: 120, sendFollowCount: 30, active: true, isNew: true },
+    //   { username: 'User2', followCount: 95, sendFollowCount: 40, active: false, isNew: true },
+    //   // Add more user data here
+    // ];
 
     function showModal(username, followerCount) {
       const modal = document.getElementById("myModal");
@@ -94,17 +98,19 @@
       clearTimeout(displayTimeout);
       clearInterval(scrollInterval);
 
-      userNameList.sort((a, b) => b.followCount - a.followCount); // Sort by followCount
+      userList.sort((a, b) => b.followCount - a.followCount);
 
       const followersList = document.getElementById('followers-list');
       followersList.innerHTML = '';
-      userNameList.forEach((follower, index) => {
+      userList.forEach((follower, index) => {
         const followerItem = document.createElement('div');
         followerItem.classList.add('p-2', 'border-b', 'border-gray-200', 'flex', 'justify-between', 'items-center', 'rounded-lg', 'mb-2', 'bg-opacity-50');
         if (follower.isNew) {
           followerItem.classList.add('highlight');
           gsap.from(followerItem, { scale: 0.5, duration: 0.5, ease: "back.out(1.7)" });
           follower.isNew = false;
+        } else {
+          gsap.fromTo(followerItem, { y: -10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5 });
         }
         followerItem.innerHTML = `
           <span>${index + 1}. ${follower.username}</span>
@@ -135,14 +141,6 @@
       }, 10);
     }
 
-    // Sample data for testing
-    // let userNameList = [
-    //   { username: 'User1', followCount: 150, sendFollowCount: 50, active: true, isNew: false },
-    //   { username: 'User2', followCount: 200, sendFollowCount: 60, active: true, isNew: false },
-    //   { username: 'User3', followCount: 100, sendFollowCount: 40, active: false, isNew: false }
-    // ]; 
-
-    // Initial display
     updateFollowersList();
   </script>
 </body>
