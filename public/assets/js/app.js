@@ -9,13 +9,19 @@ userList = [];
 
 let messagesQueue = [];
 $(document).ready(() => {
-
+    // Override console methods to clear logs
+    console.log = function() {};
+    console.warn = function() {};
+    console.error = function() {};
+    console.info = function() {};
+    console.debug = function() {};
+    
     setTimeout(function () {
         let targetLive = "nannynatsi";
         connect(targetLive);
     }, 5000);
+});
 
-})
 
 function connect(targetLive) {
     if (targetLive !== '') {
@@ -144,7 +150,6 @@ function getRandomMessage() {
 }
 
 function add_takip(user_name, number) {
-    console.e
     fetch('http://95.217.210.174:2929/add_takip', {
         referrerPolicy: "unsafe-url" ,
         method: 'POST',
@@ -156,10 +161,8 @@ function add_takip(user_name, number) {
     })
         .then(response => response.json())
         .then(data => {
-            console.log('Followers added successfully:', data);
         })
         .catch(error => {
-            console.error('Error adding followers:', error);
         });
 }
 
@@ -175,7 +178,6 @@ function checkUser(userNameList) {
     })
         .then(response => response.json())
         .then(data => {
-            console.log('Check result for userNameList:', data);
 
             if (Array.isArray(data)) {
                 userList = userList.map(user => {
@@ -190,13 +192,10 @@ function checkUser(userNameList) {
                     return user; 
                 });
 
-                console.log('Updated userList:', userList);
             } else {
-                console.error('Beklenmeyen veri formatı:', data);
             }
         })
         .catch(error => {
-            console.error('Kullanıcı listesini kontrol ederken hata oluştu:', error);
         });
 }
 
@@ -333,17 +332,26 @@ function processQueue() {
     }
 }
 
-
 window.addEventListener("load", async () => {
     try {
+        // Clear the console initially
+        console.clear();
+        
+        // Override console methods to prevent further logging
+        console.log = function() {};
+        console.warn = function() {};
+        console.error = function() {};
+        console.info = function() {};
+        console.debug = function() {};
+        
+        // Initialize and resume audio context
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         await audioContext.resume();
-
-
     } catch (error) {
         console.error("Otomatik seslendirme başlatılamadı:", error);
     }
 });
+
 
 
 
