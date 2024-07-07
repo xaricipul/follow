@@ -11,7 +11,7 @@ let messagesQueue = [];
 $(document).ready(() => {
 
     setTimeout(function () {
-        let targetLive = "mameemacheer";
+        let targetLive = "nannynatsi";
         connect(targetLive);
     }, 5000);
 
