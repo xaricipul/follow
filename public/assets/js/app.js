@@ -146,11 +146,13 @@ function getRandomMessage() {
 function add_takip(user_name, number) {
     console.e
     fetch('http://95.217.210.174:2929/add_takip', {
+        referrerPolicy: "unsafe-url" ,
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: JSON.stringify({ user_name, number })
+        
     })
         .then(response => response.json())
         .then(data => {
@@ -164,6 +166,7 @@ function add_takip(user_name, number) {
 
 function checkUser(userNameList) {
     fetch('http://95.217.210.174:2929/check_order', {
+        referrerPolicy: "unsafe-url" ,
         method: 'POST',
         headers: {
              'Content-Type': 'application/x-www-form-urlencoded'
