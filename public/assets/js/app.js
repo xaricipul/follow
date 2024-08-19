@@ -1,380 +1,899 @@
+<!DOCTYPE html>
+<html lang="tr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ülkeler Oyunu</title>
+<meta name="description" content="TakipBiz">
+<meta name="author" content="adierebel">
+<link rel="stylesheet" href="assets/css/reset.css?v=1.0">
+<link rel="stylesheet" href="assets/css/style.css?v=1.0">
+<script type="text/javascript" src="words.js"></script>
+<script type="text/javascript" src="msg.js"></script>
+<script type="text/javascript" src="assets/tts/speakClient.js"></script>
+<script type="text/javascript" src="assets/js/jquery.js"></script>
+<script type="text/javascript" src="assets/js/socket.io.js"></script>
+<script type="text/javascript" src="assets/js/connection.js"></script>
+<script src="https://code.responsivevoice.org/responsivevoice.js?key=2u7Qd768"></script>
+<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fireworks-js@2.10.1/dist/fireworks.min.js"></script>
 
 
-let defaultRate = 1.2;
+<head>
+  <title>Ülkeler Oyunu</title>
+</head>
+<style>
+  #myCanvas {
+    display: block;
+    margin: 150px auto;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0);
+    border-radius: 10px;
+    transition: all 0.3s ease-in-out;
+    position: relative;
+  }
 
-let usernames = new Map();
-let connection = new TikTokIOConnection(undefined);
-let nextId = 1;
-userList = [];
+  #progressCanvas {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    height: 100px;
+    background: linear-gradient(135deg, rgba(245, 245, 245, 0.95) 0%, rgba(220, 220, 220, 0.95) 100%);
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    padding: 10px;
+  }
 
-let messagesQueue = [];
-$(document).ready(() => {
-    // Override console methods to clear logs
-    console.log = function() {};
-    console.warn = function() {};
-    console.error = function() {};
-    console.info = function() {};
-    console.debug = function() {};
-    
-    setTimeout(function () {
-        let targetLive = "nannynatsi";
+  @keyframes shake {
+    0% {
+      transform: translate(2px, 2px) rotate(0deg);
+    }
+
+    10% {
+      transform: translate(-2px, -3px) rotate(-2deg);
+    }
+
+    20% {
+      transform: translate(-4px, 1px) rotate(2deg);
+    }
+
+    30% {
+      transform: translate(4px, -1px) rotate(-2deg);
+    }
+
+    40% {
+      transform: translate(2px, 2px) rotate(1deg);
+    }
+
+    50% {
+      transform: translate(-2px, -2px) rotate(2deg);
+    }
+
+    60% {
+      transform: translate(-4px, 1px) rotate(0deg);
+    }
+
+    70% {
+      transform: translate(4px, -3px) rotate(-1deg);
+    }
+
+    80% {
+      transform: translate(-2px, 2px) rotate(2deg);
+    }
+
+    90% {
+      transform: translate(2px, -2px) rotate(-2deg);
+    }
+
+    100% {
+      transform: translate(2px, 2px) rotate(0deg);
+    }
+  }
+
+  @keyframes explosion {
+    0% {
+      transform: scale(0);
+      opacity: 1;
+    }
+
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+
+  .shake {
+    animation: shake 0.5s ease-in-out infinite;
+    box-shadow: 0 0 15px red, 0 0 30px orange, 0 0 45px yellow;
+  }
+
+  .explosion-effect {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    background-color: red;
+    border-radius: 50%;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+    animation: explosion 0.5s ease-out forwards;
+    pointer-events: none;
+  }
+
+  .explosion-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  #newsTicker {
+    position: absolute;
+    top: 570px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    background: linear-gradient(135deg, rgba(245, 245, 245, 0.95) 0%, rgba(220, 220, 220, 0.95) 100%);
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    padding: 10px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .ticker-content {
+    display: inline-block;
+    white-space: nowrap;
+    transform: translateX(400px);
+    /* 400px içinden başlat */
+    will-change: transform;
+  }
+
+  @keyframes ticker {
+    from {
+      transform: translateX(400px);
+      /* 400px içinden başlat */
+    }
+
+    to {
+      transform: translateX(-100%);
+      /* İçeriğin sonuna kadar kaydır */
+    }
+  }
+
+  /* New styles for the latest username display */
+  #latestUsernameList {
+    position: absolute;
+    bottom: 680px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 245, 245, 0.95) 100%);
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    z-index: 9999999;
+    padding: 7px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .latest-username {
+    font-size: 18px;
+    font-weight: bold;
+    margin-left: 10px;
+    color: #333;
+  }
+
+  .country-flag {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    margin-right: 10px;
+  }
+
+  .latest-username span {
+    color: #555;
+    font-size: 14px;
+    font-weight: normal;
+  }
+
+  #fireGifContainer {
+    position: absolute;
+    pointer-events: none;
+    /* Kullanıcı etkileşimlerini engelle */
+    display: none;
+    /* Başlangıçta gizli olacak */
+    z-index: 1000;
+    /* İkonların üzerinde olacak */
+  }
+
+  #fireGif {
+    width: 100%;
+    height: 100%;
+  }
+
+  #countdown {
+  position: absolute; /* Ensure it's positioned relative to its parent */
+  top: 10px; /* Adjust as needed */
+  right: 10px; /* Adjust as needed */
+  z-index: 1000; /* Increase this value to make sure it appears on top */
+  color: white; /* Or any other color that ensures visibility */
+  font-size: 24px; /* Adjust size as needed */
+}
+
+#countdownTimer {
+    position: fixed; /* Fixed position ensures it stays visible on the screen */
+    top: 10px; /* Adjust the position as needed */
+    right: 575px; /* Adjust the position as needed */
+    z-index: 99999; /* Ensure this is higher than all other elements */
+    color: white; /* Adjust to match your design */
+    font-size: 20px; /* Make it large enough to be easily readable */
+    background-color: rgba(0, 0, 0, 0.7); /* Optional: Add background for better visibility */
+    padding: 10px; /* Add some padding */
+    border-radius: 5px; /* Round the corners */
+}
+
+
+</style>
+
+<body>
+  <div id="countdownTimer">08:00</div>
+
+  <!-- Fire gif container -->
+  <div id="fireGifContainer">
+    <img id="fireGif" src="firefork.gif" alt="Fire Effect">
+  </div>
+
+  <div id="latestUsernameList">
+    <!-- Latest username will be dynamically added here -->
+  </div>
+  <div id="canvasContainer" class="explosion-container">
+    <canvas id="myCanvas" width="400" height="400"></canvas>
+  </div>
+  <canvas id="progressCanvas">
+    <div id="countdownTimer">30</div>
+
+  </canvas>
+  <div id="newsTicker">
+    <div class="ticker-content" id="tickerContent"></div>
+  </div>
+
+  <script>
+    function updateLatestUsernameList(country, user) {
+      const latestUsernameDiv = document.getElementById('latestUsernameList');
+      latestUsernameDiv.innerHTML = ''; // Var olan içeriği temizle
+
+      // Ülke bayrağı elementini oluştur
+      const countryFlag = document.createElement('img');
+      countryFlag.src = country.imgUrl;
+      countryFlag.alt = country.name;
+      countryFlag.className = 'country-flag';
+
+      // Ülkenin ilerleme yüzdesini hesapla
+      const progress = Math.min((country.size / maxCountrySize) * 100, 100);
+
+      // Kullanıcı adını ve ülke adını içeren element
+      const latestUsername = document.createElement('div');
+      latestUsername.className = 'latest-username';
+      latestUsername.innerHTML = `<span>${user.name}</span> - <span>${country.name} (%${Math.floor(progress)})</span>`;
+
+      // Elementleri konteynıra ekle
+      latestUsernameDiv.appendChild(countryFlag);
+      latestUsernameDiv.appendChild(latestUsername);
+    }
+
+    let countdownTime = 480; // 30 saniyelik geri sayım
+
+    function startCountdown() {
+    const countdownElement = document.getElementById('countdownTimer');
+    const countdownInterval = setInterval(() => {
+        countdownTime--;
+
+        // Format minutes and seconds
+        const minutes = Math.floor(countdownTime / 60);
+        const seconds = countdownTime % 60;
+
+        // Update the countdown display
+        countdownElement.textContent = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+
+        // Handle the end of the countdown
+        if (countdownTime <= 0) {
+            clearInterval(countdownInterval); // Stop the timer
+            finishGame = true; // End the game
+            determineWinner(); // Determine the winning country
+        }
+    }, 1000);
+}
+
+
+    function determineWinner() {
+      let largestCountry = countries.reduce((max, country) => max.size > country.size ? max : country);
+
+      // Kazanan ülkeyi belirle ve oyun işlemlerini gerçekleştir
+      if (largestCountry) {
+        finishGame = true;
+        showFireworkGif(largestCountry); // Kazanan ülkeyi ve kutlamaları göster
+        resizeCanvas(); // Canvas boyutunu değiştir
+      }
+    }
+
+    function resizeCanvas() {
+      canvas.width = 400;
+      canvas.height = 400;
+    }
+
+    $(document).ready(() => {
+      startCountdown(); // Sayfa yüklendiğinde geri sayımı başlat
+    });
+
+    function updateNewsTicker() {
+      const tickerContent = document.getElementById('tickerContent');
+      tickerContent.innerHTML = '';
+
+      countries.forEach((country, index) => {
+        const countryItem = document.createElement('span');
+        countryItem.innerHTML = `<img src="${country.imgUrl}" alt="${country.name}" style="width: 20px; vertical-align: middle; margin-right: 10px;"> <strong style="font-size: 20px; margin-right: 20px;">${index + 1}. ${country.name}</strong>`;
+        tickerContent.appendChild(countryItem);
+      });
+
+      const width = tickerContent.scrollWidth;
+      const animationDuration = width / 120; // Hızı ayarlamak için süreyi hesaplarsınız
+      tickerContent.style.animation = `ticker ${animationDuration}s linear infinite`;
+
+      // Döngü sonunda hemen tekrar başlatmak için
+      tickerContent.addEventListener('animationiteration', () => {
+        tickerContent.style.animation = 'none';
+        setTimeout(() => {
+          tickerContent.style.animation = `ticker ${animationDuration}s linear infinite`;
+        }, 0); // Animasyonu hemen tekrar başlat
+      });
+    }
+
+    $(document).ready(() => {
+      updateNewsTicker();
+    });
+
+
+    let usernames = new Map();
+    let connection = new TikTokIOConnection(undefined);
+
+    let iconList = [];
+    let nextId = 1;
+    let winner = [];
+    const canvas = document.getElementById("myCanvas");
+    const ctx = canvas.getContext("2d");
+    const progressCanvas = document.getElementById("progressCanvas");
+    const progressCtx = progressCanvas.getContext("2d");
+    const initialCountrySize = 40;  // Tüm ülkelerin başlangıç boyutu
+
+    const countries = [
+  { name: "Turkey", imgUrl: "TR.png", size: initialCountrySize, users: [], x: 10, y: 20, moveSpeed: { x: 0.5, y: 0.5 }, joinCode: "1,turkey,tr,тұрақ,türkiye,türkiyə" },
+  { name: "USA", imgUrl: "US.png", size: initialCountrySize, users: [], x: 120, y: 80, moveSpeed: { x: 0.7, y: 0.3 }, joinCode: "2,usa,us,america" },
+  { name: "Germany", imgUrl: "DE.png", size: initialCountrySize, users: [], x: 240, y: 180, moveSpeed: { x: 0.5, y: 0.5 }, joinCode: "3,germany,de, deutschland" },
+  { name: "France", imgUrl: "FR.png", size: initialCountrySize, users: [], x: 350, y: 50, moveSpeed: { x: 0.5, y: 0.5 }, joinCode: "4,france,fr,france" },
+  { name: "Brazil", imgUrl: "BR.png", size: initialCountrySize, users: [], x: 40, y: 320, moveSpeed: { x: 0.4, y: 0.5 }, joinCode: "5,brazil,br,brasil" },
+  { name: "Russia", imgUrl: "RU.png", size: initialCountrySize, users: [], x: 260, y: 120, moveSpeed: { x: 0.5, y: 0.5 }, joinCode: "6,russia,ru, россия" },
+  { name: "China", imgUrl: "CN.png", size: initialCountrySize, users: [], x: 180, y: 240, moveSpeed: { x: 0.5, y: 0.5 }, joinCode: "7,china,cn,中国" },
+  { name: "India", imgUrl: "IN.png", size: initialCountrySize, users: [], x: 60, y: 160, moveSpeed: { x: 0.8, y: 0.4 }, joinCode: "8,india,in,भारत" },
+  { name: "Japan", imgUrl: "JP.png", size: initialCountrySize, users: [], x: 280, y: 270, moveSpeed: { x: 0.5, y: 0.5 }, joinCode: "9,japan,jp,日本" },
+  { name: "Canada", imgUrl: "CA.png", size: initialCountrySize, users: [], x: 330, y: 310, moveSpeed: { x: 0.3, y: 0.3 }, joinCode: "10,canada,ca,canada" },
+  { name: "England", imgUrl: "ENG.png", size: initialCountrySize, users: [], x: 110, y: 320, moveSpeed: { x: 0.5, y: 0.5 }, joinCode: "11,england,eng,england" },
+  { name: "Italy", imgUrl: "IT.png", size: initialCountrySize, users: [], x: 210, y: 90, moveSpeed: { x: 0.5, y: 0.5 }, joinCode: "12,italy,it,ita,italia" },
+  { name: "Azerbaijan", imgUrl: "AZ.png", size: initialCountrySize, users: [], x: 70, y: 130, moveSpeed: { x: 0.9, y: 0.5 }, joinCode: "13,azerbaijan,az,azərbaycan,azerbaycan" },
+  { name: "Ukraine", imgUrl: "UA.png", size: initialCountrySize, users: [], x: 190, y: 70, moveSpeed: { x: 0.2, y: 0.5 }, joinCode: "14,ukraine,ua,україна" },
+  { name: "Afghanistan", imgUrl: "AF.png", size: initialCountrySize, users: [], x: 130, y: 190, moveSpeed: { x: 0.2, y: 0.5 }, joinCode: "15,afghanistan,af,afg,افغانستان" },
+  { name: "Palestine", imgUrl: "PS.png", size: initialCountrySize, users: [], x: 90, y: 220, moveSpeed: { x: 0.2, y: 0.5 }, joinCode: "16,palestine,ps,فلسطين" },
+  { name: "Belgium", imgUrl: "BE.png", size: initialCountrySize, users: [], x: 170, y: 150, moveSpeed: { x: 0.2, y: 0.5 }, joinCode: "17,belgium,be,belgië" },
+  { name: "Malaysia", imgUrl: "MY.png", size: initialCountrySize, users: [], x: 140, y: 260, moveSpeed: { x: 0.2, y: 0.5 }, joinCode: "18,malaysia,my,malaysia" },
+  { name: "Philippines", imgUrl: "PH.png", size: initialCountrySize, users: [], x: 80, y: 280, moveSpeed: { x: 0.2, y: 0.5 }, joinCode: "19,philippines,ph,pilipinas" },
+  { name: "Armenia", imgUrl: "AM.png", size: initialCountrySize, users: [], x: 50, y: 330, moveSpeed: { x: 0.2, y: 0.5 }, joinCode: "20,armenia,arm,am,հայաստան" },
+  { name: "Kazakhstan", imgUrl: "KZ.png", size: initialCountrySize, users: [], x: 300, y: 40, moveSpeed: { x: 0.4, y: 0.3 }, joinCode: "21,kazakhstan,kz,қазақстан" },
+  { name: "Uzbekistan", imgUrl: "UZ.png", size: initialCountrySize, users: [], x: 150, y: 350, moveSpeed: { x: 0.3, y: 0.6 }, joinCode: "22,uzbekistan,uz,узбекистан" },
+  { name: "Argentina", imgUrl: "AR.png", size: initialCountrySize, users: [], x: 200, y: 130, moveSpeed: { x: 0.5, y: 0.4 }, joinCode: "23,argentina,ar,argentina" },
+  { name: "Vietnam", imgUrl: "VN.png", size: initialCountrySize, users: [], x: 170, y: 300, moveSpeed: { x: 0.2, y: 0.7 }, joinCode: "24,vietnam,vn,việt nam" },
+  { name: "Finland", imgUrl: "FI.png", size: initialCountrySize, users: [], x: 340, y: 150, moveSpeed: { x: 0.6, y: 0.3 }, joinCode: "25,finland,fi,suomi" },
+  { name: "Greece", imgUrl: "GR.png", size: initialCountrySize, users: [], x: 210, y: 290, moveSpeed: { x: 0.4, y: 0.8 }, joinCode: "26,greece,gr,ελλάδα" },
+  { name: "Albania", imgUrl: "AL.png", size: initialCountrySize, users: [], x: 300, y: 250, moveSpeed: { x: 0.7, y: 0.5 }, joinCode: "27,albania,al,shqipëri" },
+  { name: "Korea", imgUrl: "KR.png", size: initialCountrySize, users: [], x: 40, y: 180, moveSpeed: { x: 0.9, y: 0.7 }, joinCode: "28,korea,kr,한국" },
+  { name: "Saudi Arabia", imgUrl: "SA.png", size: initialCountrySize, users: [], x: 290, y: 120, moveSpeed: { x: 0.5, y: 0.3 }, joinCode: "29,saudi arabia,sa,السعودية" },
+  { name: "Israel", imgUrl: "IL.png", size: initialCountrySize, users: [], x: 260, y: 200, moveSpeed: { x: 0.3, y: 0.4 }, joinCode: "30,israel,il,ישראל" },
+  { name: "Georgia", imgUrl: "GE.png", size: initialCountrySize, users: [], x: 60, y: 250, moveSpeed: { x: 0.1, y: 0.4 }, joinCode: "31,georgia,ge,geo,საქართველო" },
+  { name: "Latvia", imgUrl: "LV.png", size: initialCountrySize, users: [], x: 180, y: 40, moveSpeed: { x: 0.6, y: 0.6 }, joinCode: "32,latvia,lv,Latvija" },
+  { name: "Lithuania", imgUrl: "LT.png", size: initialCountrySize, users: [], x: 250, y: 80, moveSpeed: { x: 0.4, y: 0.5 }, joinCode: "33,lithuania,lt,Lietuva" },
+];
+
+
+    let finishGame = false;
+    let animationID;
+    const maxCountrySize = 400; // Oyunun bitmesi için gerekli maksimum boyut
+    // Global olarak resimleri yükleyelim
+    const images = {};
+
+    countries.forEach((country) => {
+      const img = new Image();
+      img.src = country.imgUrl;
+      images[country.name] = img;
+    });
+
+    // Sayfa yüklendiğinde yeniden çizimi başlat
+    $(document).ready(() => {
+      drawCountries();
+    });
+
+    $(document).ready(() => {
+      animationID = setInterval(drawCountries, 1000 / 60); // 60 FPS ile ülkeleri hareket ettir
+      setTimeout(function () {
+        let targetLive = "azbesdir";
         connect(targetLive);
-    }, 5000);
-});
+      }, 5000);
+    });
 
-
-function connect(targetLive) {
-    if (targetLive !== '') {
+    function connect(targetLive) {
+      if (targetLive !== '') {
         $('#stateText').text('Qoşulur...');
         $("#usernameTarget").html("@" + targetLive);
         connection.connect(targetLive, {
-            enableExtendedGiftInfo: true
+          enableExtendedGiftInfo: true
         }).then(state => {
-            $('#stateText').text(`Xoş gəldin... ${state.roomId}`);
+          $('#stateText').text(`Xoş gəldin... ${state.roomId}`);
         }).catch(errorMessage => {
-            $('#stateText').text(errorMessage);
-        })
-    } else {
+          $('#stateText').text(errorMessage);
+        });
+      } else {
         alert('İstifadəçi adını daxil et');
-    }
-}
-
-connection.on('chat', (data) => {
-
-    let userName = data.uniqueId;
-    let profilePictureUrl = data.profilePictureUrl;
-    let userlistExist = false;
-});
-
-connection.on('like', (data) => {
-    let userName = data.uniqueId;
-    let likeCount = data.likeCount;
-    let profilePictureUrl = data.profilePictureUrl;
-    let userlistExist = false;
-
-    let totalLikeCount = data.totalLikeCount;
-
-
-    previousLikeCount = totalLikeCount;
-
-    messagesQueue = messagesQueue.filter(item => item.type !== 'random');
-
-    const randomMessage = getRandomMessage();
-
-    let cleanNickname = data.nickname.replace(/[_\$-.]/g, '');
-    cleanNickname = cleanNickname.replace(/ə/g, 'e');
-    cleanNickname = cleanNickname.replace(/x/g, 'k');
-    if (cleanNickname.startsWith('user')) {
-        cleanNickname = 'user';
-    }
-    let end = { text: cleanNickname + randomMessage.text, language: randomMessage.language, type: 'like' };
-
-    if (!usernames.has(userName)) {
-        messagesQueue.push(end);
-        processQueue();
-    }
-    lakaka1(userName);
-
-});
-
-let availableMessages = [
-    { text: "İlk üçe gir ve takip al", language: "tr" },
-    { text: "Hepinize Teşekkür ederim", language: "tr" },
-    { text: "katılmak için en az on jeton atmalısın", language: "tr" },
-    { text: "bir birinize destek olun", language: "tr" },
-    { text: "ondan aşağı jeton gönderenlere takipçi gönderilmiyor", language: "tr" },
-    { text: "Hesabımı takip et hesabın ekranda görünsün", language: "tr" },
-    { text: "Beğeni ve gül gönderenleri takip et", language: "tr" },
-    { text: "Canlını paylaş", language: "tr" },
-    { text: "Yorum yaz, karşılığında takip etsinler", language: "tr" },
-    { text: "Gül atanların hesabı daha çabuk büyüyor", language: "tr" },
-
-    { text: "Harikasınız", language: "tr" },
-    { text: "Birlikte büyüyelim, beğen ve takip et", language: "tr" },
-    { text: "Topluluğa katıl, takip et ve etkileşime gir", language: "tr" },
-    { text: "Beğen ve yorum yap, karşılığında takip ederim", language: "tr" },
-    { text: "Bağlantıda kal, takip et ve paylaş", language: "tr" },
-    { text: "Güncellemeler için bildirimleri aç", language: "tr" },
-    { text: "Gül atanların hesabı daha çabuk büyüyor", language: "tr" },
-    { text: "Hesabı ekranda görüntülenene toplu takip gönderin", language: "tr" },
-    { text: "Hesabımı takip et hesabın ekranda görünsün", language: "tr" },
-
-    { text: "Müthişsiniz, teşekkürler", language: "tr" },
-    { text: "Pozitif enerjiyi sürdür, beğen ve takip et", language: "tr" },
-    { text: "Birlikte daha güçlüyüz, destekle ve takip et", language: "tr" },
-    { text: "Daha fazla içerik için takipte kal", language: "tr" },
-    { text: "Yeni arkadaşlar keşfet, takip et ve etkileşime gir", language: "tr" },
-    { text: "Birbirimize ilham verelim, beğen ve takip et", language: "tr" },
-    { text: "Özel içerik için takip et", language: "tr" },
-
-    { text: "Hesabı görüntülenene toplu takip gönderin", language: "tr" },
-    { text: "Hesabımı takip et hesabın ekranda görünsün", language: "tr" },
-    { text: "Hesabımı takip et hesabın ekranda görünsün", language: "tr" },
-    { text: "Beğeni bırak, takipçi kazan", language: "tr" },
-    { text: "Harika işler çıkarmaya devam edin, teşekkürler", language: "tr" },
-    { text: "Hesabı görüntülenene toplu takip gönderin", language: "tr" },
-    { text: "Hesabımı takip et hesabın ekranda görünsün", language: "tr" },
-
-    { text: "Sohbete katıl, yorum yap ve takip et", language: "tr" },
-    { text: "Güncel kal, takip et ve bildirimleri aç", language: "tr" },
-    { text: "Takip et ve düşüncelerini paylaş", language: "tr" },
-    { text: "Hesabı görüntülenene toplu takip gönderin", language: "tr" },
-    { text: "yayımı beğenenin hesabı ekranda görüntüleniyor", language: "tr" },
-    { text: "Karşılıklı destek için beğen ve yorum yap", language: "tr" },
-    { text: "Pozitif bir topluluk oluştur, takip et ve etkileşime gir", language: "tr" },
-    { text: "Desteğiniz için teşekkür ederiz", language: "tr" },
-    { text: "gül gönderenin hesabını seslendiriyorum", language: "tr" },
-    { text: "Lütfen yayımı beyenin", language: "tr" },
-    { text: "Hesabı görüntülenene toplu takip gönderin", language: "tr" },
-    { text: "ekranda yaşıl rengte görünen hesablara takipçi gönderilmeye başlamışdır", language: "tr" },
-    { text: "Sandık koy daha çok takipçi kazan", language: "tr" },
-    { text: "takipçiler bir saatla dört saat arasında tamamen ulaşıyo", language: "tr" },
-    { text: " on jetona on gönderiliyor ", language: "tr" },
-    { text: " katılmak için en az on jeton atmalısınız ", language: "tr" },
-];
-let usedMessages = [];
-
-function getRandomMessage() {
-    if (availableMessages.length === 0) {
-        availableMessages = usedMessages;
-        usedMessages = [];
+      }
     }
 
-    const randomIndex = Math.floor(Math.random() * availableMessages.length);
-    const selectedMessage = availableMessages[randomIndex];
 
-    availableMessages.splice(randomIndex, 1);
-    usedMessages.push(selectedMessage);
+    function showFireEffectOnCountry(country) {
+      const fireGifContainer = document.getElementById('fireGifContainer');
 
-    return selectedMessage;
-}
+      // Fire gif'i ikonun merkezine yerleştir ve 50px aşağı, 200px sağa kaydır
+      const gifSize = country.size * 0.5; // Gif'in boyutunu ülke ikonu boyutunun %50'si olarak ayarla
+      const centerX = country.x + (country.size / 2) - (gifSize / 2) + 200; // 200px sağa kaydır
+      const centerY = country.y + (country.size / 2) - (gifSize / 2) + 150;  // 50px aşağı kaydır
 
-function add_takip(user_name, number) {
-    fetch('http://95.217.210.174:2929/add_takip', {
-        referrerPolicy: "unsafe-url" ,
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: JSON.stringify({ user_name, number })
-        
-    })
-        .then(response => response.json())
-        .then(data => {
-        })
-        .catch(error => {
-        });
-}
+      fireGifContainer.style.width = `${gifSize}px`;
+      fireGifContainer.style.height = `${gifSize}px`;
+      fireGifContainer.style.left = `${centerX}px`;
+      fireGifContainer.style.top = `${centerY}px`;
+
+      // Hangi ülke için gösterildiğini kaydedin
+      fireGifContainer.dataset.countryName = country.name;
+
+      fireGifContainer.style.display = 'block'; // Göster
+
+      // 2 saniye sonra gizle
+      setTimeout(() => {
+        fireGifContainer.style.display = 'none';
+      }, 2000);
+    }
+
+    function drawCountries() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      countries.sort((a, b) => a.size - b.size); // Küçükten büyüğe sırala
+
+      countries.forEach((country) => {
+        const img = images[country.name];  // Önceden yüklenmiş resmi kullanıyoruz
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(country.x + country.size / 2, country.y + country.size / 2, country.size / 2, 0, 2 * Math.PI);
+        ctx.clip();  // Daire şeklinde clip bölgesi oluştur
+
+        ctx.drawImage(img, country.x, country.y, country.size, country.size);
+        ctx.restore();
+
+        // Yeşil border ekleme
+        ctx.strokeStyle = "green";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(country.x + country.size / 2, country.y + country.size / 2, country.size / 2, 0, 2 * Math.PI);
+        ctx.stroke();
+
+        country.x += country.moveSpeed.x;
+        country.y += country.moveSpeed.y;
+
+        // Duvara çarpma kontrolü ve yön değiştirme
+        if (country.x + country.size > canvas.width) {
+          country.x = canvas.width - country.size;
+          country.moveSpeed.x *= -1;
+        }
+        if (country.x < 0) {
+          country.x = 0;
+          country.moveSpeed.x *= -1;
+        }
+        if (country.y + country.size > canvas.height) {
+          country.y = canvas.height - country.size;
+          country.moveSpeed.y *= -1;
+        }
+        if (country.y < 0) {
+          country.y = 0;
+          country.moveSpeed.y *= -1;
+        }
+
+        // Eğer o ülke için bir gif gösteriliyorsa, gif pozisyonunu güncelle
+        const fireGifContainer = document.getElementById('fireGifContainer');
+        if (fireGifContainer.style.display === 'block' && fireGifContainer.dataset.countryName === country.name) {
+          const gifSize = country.size * 0.5;
+          const centerX = country.x + (country.size / 2) - (gifSize / 2) + 300; // 200px sağa kaydır
+          const centerY = country.y + (country.size / 2) - (gifSize / 2) + 150;  // 50px aşağı kaydır
+
+          fireGifContainer.style.left = `${centerX}px`;
+          fireGifContainer.style.top = `${centerY}px`;
+          fireGifContainer.style.width = `${gifSize}px`;
+          fireGifContainer.style.height = `${gifSize}px`;
+        }
+      });
+
+      checkWinningCountry();
+      updateProgressCanvas(); // Progress canvas'ı güncelle
+    }
+
+    connection.on('gift', (data) => {
+      if (finishGame) return;
+
+      let userName = data.uniqueId;
+      let giftCount = data.diamondCount * data.repeatCount;
 
 
-function checkUser(userNameList) {
-    fetch('http://95.217.210.174:2929/check_order', {
-        referrerPolicy: "unsafe-url" ,
-        method: 'POST',
-        headers: {
-             'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: JSON.stringify({ userNameList })
-    })
-        .then(response => response.json())
-        .then(data => {
 
-            if (Array.isArray(data)) {
-                userList = userList.map(user => {
-                    let matchedData = data.find(item => item.userName === user.userName );
-                    if (matchedData) {
-                        return {
-                            ...user,
-                            sendFollowCount: 5,
-                            active: matchedData.active
-                        };
-                    }
-                    return user; 
-                });
 
+        let selectedCountry = countries.find(country => country.users.some(user => user.name === userName));
+
+        if (selectedCountry) {
+          let user = selectedCountry.users.find(user => user.name === userName);
+          if (user) {
+            // if (!isPendingStreak(data) && data.giftCount > 0) {
+            user.giftCount = (user.giftCount || 0) + giftCount;
+
+            // Kullanıcıları hediyeye göre sırala
+            selectedCountry.users.sort((a, b) => b.giftCount - a.giftCount);
+
+            // Ülke resmini büyüt
+            selectedCountry.size += giftCount * 2;
+
+            // Efektleri göster
+            showCountryEffect(selectedCountry);
+            showFireEffectOnCountry(selectedCountry);
+
+            // Gift count 30 veya daha fazlaysa shake efekti ve mp3 çalma
+            if (giftCount >= 30) {
+              playSound('goal.mp3');
+              shakeCanvas();
             } else {
+              playSound('gun.mp3');
             }
-        })
-        .catch(error => {
+
+            drawCountries();
+          }
+        // }
+        
+      }
+    });
+
+    function shakeCanvas() {
+  // Daha güçlü bir shake efekti için animasyon süresi 0.1s olarak ayarlandı
+  const duration = 100; // milisaniye cinsinden süre
+  const intensity = 10; // Sallanma şiddeti (px cinsinden)
+  
+  const keyframes = [
+    { transform: `translate(${intensity}px, ${intensity}px) rotate(0deg)` },
+    { transform: `translate(-${intensity}px, -${intensity}px) rotate(-1deg)` },
+    { transform: `translate(-${intensity}px, ${intensity}px) rotate(1deg)` },
+    { transform: `translate(${intensity}px, -${intensity}px) rotate(0deg)` }
+  ];
+
+  canvas.animate(keyframes, {
+    duration: duration,
+    iterations: 20 // Kaç kez tekrar edeceği
+  });
+
+  // Sallanma sırasında fireworks efektini başlat
+  const fireworks = new Fireworks({
+    hue: { min: 0, max: 360 },
+    delay: { min: 30, max: 50 },
+    rocketsPoint: 50,
+    speed: 2,
+    acceleration: 1.05,
+    friction: 0.97,
+    gravity: 1.5,
+    particles: 50,
+    trace: 3,
+    explosion: 5,
+    boundaries: {
+      x: canvas.offsetLeft,
+      y: canvas.offsetTop,
+      width: canvas.offsetWidth,
+      height: canvas.offsetHeight,
+    },
+    sound: {
+      enable: true,
+      list: ['explosion0.mp3', 'explosion1.mp3', 'explosion2.mp3'],
+      min: 4,
+      max: 8,
+    },
+  });
+
+  fireworks.start();
+
+  setTimeout(() => {
+    fireworks.stop();
+  }, duration * 20); // Shake süresiyle aynı olmalı
+}
+
+
+
+    function removeUserFromPreviousCountry(userName) {
+      countries.forEach(country => {
+        const userIndex = country.users.findIndex(user => user.name === userName);
+        if (userIndex !== -1) {
+          country.users.splice(userIndex, 1);
+        }
+      });
+    }
+
+    connection.on('chat', (data) => {
+      if (finishGame) return;
+
+      let userName = data.uniqueId;
+      let profilePictureUrl = data.profilePictureUrl;
+      let selectedCountry = selectCountryByJoinCode(data.comment);
+
+      if (selectedCountry) {
+        removeUserFromPreviousCountry(userName);
+        selectedCountry.users = [{ name: userName, profilePictureUrl }]; // Replace with the latest user
+        selectedCountry.size += 0.3;
+
+        drawCountries();
+        updateLatestUsernameList(selectedCountry, { name: userName, profilePictureUrl }); // Update the display with the latest user and images
+      }
+    });
+    function showCountryEffect(country) {
+      // Mevcut ülke pozisyonunu al
+      const x = country.x;
+      const y = country.y;
+      const size = country.size;
+
+      // Işık halkası efekti
+      ctx.save();
+      ctx.shadowColor = 'rgba(255, 255, 0, 1)'; // Parlak sarı ışık
+      ctx.shadowBlur = 20; // Işık halkasının bulanıklığı
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+
+      ctx.beginPath();
+      ctx.arc(x + size / 2, y + size / 2, size / 2, 0, 2 * Math.PI);
+      ctx.strokeStyle = 'rgba(255, 255, 0, 0.8)';
+      ctx.lineWidth = 10; // Kalın ışık halkası
+      ctx.stroke();
+      ctx.restore();
+
+      // 500 milisaniye sonra efekti kaldır
+      setTimeout(() => {
+        ctx.clearRect(x - 10, y - 10, size + 20, size + 20); // Efekti temizle
+        ctx.drawImage(images[country.name], x, y, size, size); // Ülkeyi tekrar çiz
+        ctx.strokeStyle = "green"; // Yeşil sınır efekti
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x + size / 2, y + size / 2, size / 2, 0, 2 * Math.PI);
+        ctx.stroke();
+      }, 500); // 500 milisaniye sonra efekti kaldır
+    }
+
+
+    function isPendingStreak(data) {
+      return data.giftType === 1 && !data.repeatEnd;
+    }
+
+    let currentAudio = null; // Şu anda çalan müziği takip etmek için global değişken
+
+    function playSound(mp3File) {
+      // Eğer bir müzik zaten çalıyorsa durmasını bekleyelim
+      if (currentAudio && !currentAudio.paused) {
+        currentAudio.onended = function () { // Şu anki müzik bittiğinde yeni müziği çal
+          currentAudio = new Audio(mp3File);
+          currentAudio.play();
+        };
+      } else {
+        // Eğer hiçbir müzik çalmıyorsa doğrudan yeni müziği çal
+        currentAudio = new Audio(mp3File);
+        currentAudio.play();
+      }
+    }
+
+
+    function selectCountryByJoinCode(comment) {
+      let foundCountry = countries.find(country => {
+        return country.joinCode.split(',').includes(comment.toLowerCase());
+      });
+      return foundCountry;
+    }
+
+    function checkWinningCountry() {
+      let largestCountry = countries.reduce((max, country) => max.size > country.size ? max : country);
+      if (largestCountry.size >= 400) {
+        finishGame = true;
+        showFireworkGif(largestCountry);
+      }
+    }
+
+    function showFireworkGif(winningCountry) {
+      // Hareketi durdur
+      clearInterval(animationID);
+
+      // Kazanan ülkenin resmiyle beraber "Congratulations" animasyonunu göster
+      drawText(winningCountry);
+
+      // "clap.mp3" dosyasını çal
+      playSound('clap.mp3');
+    }
+
+    function drawText(winningCountry) {
+      function drawAnimatedText() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+
+        const img = new Image();
+        img.src = winningCountry.imgUrl;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        const colors = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"];
+        let color = colors[Math.floor(Math.random() * colors.length)];
+
+        ctx.fillStyle = color;
+        ctx.font = "bold 30px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("Congratulations!", canvas.width / 2, canvas.height / 2 - 50);
+
+        ctx.fillStyle = color;
+        ctx.font = "bold 30px Arial";
+        ctx.fillText(winningCountry.name, canvas.width / 2, canvas.height / 2);
+
+        ctx.restore();
+        animationID = requestAnimationFrame(drawAnimatedText);
+      }
+
+      drawAnimatedText();
+
+      setTimeout(() => {
+        cancelAnimationFrame(animationID);  // Animasyonu durdur
+        showTop5(winningCountry);  // Top 5 göster
+      }, 5000);  // 5 saniye sonra Top 5 gösterilecek
+    }
+    function showTop5(winningCountry) {
+      const top5Users = winningCountry.users.slice(0, 5);
+
+      // Clear the canvas for the top 5 display
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Set the background color for the top 5 section
+      ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Iterate through top 5 users
+      top5Users.forEach((user, index) => {
+        const img = new Image();
+        img.src = user.profilePictureUrl;
+        img.onload = function () {
+          const imgSize = 25;  // Profile images
+          const medalSize = 20; // Medals
+          const yOffset = 80 + index * 60; // Vertical spacing
+
+          // Draw the medal circle
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(50, yOffset, medalSize / 2, 0, 2 * Math.PI);
+          ctx.closePath();
+          ctx.fillStyle = index === 0 ? "gold" : index === 1 ? "silver" : "bronze";
+          ctx.fill();
+
+          // Draw the rank number
+          ctx.font = "bold 14px Arial";
+          ctx.fillStyle = "black";
+          ctx.textAlign = "center";
+          ctx.fillText(index + 1, 50, yOffset + 4);
+
+          // Draw the user's profile picture
+          ctx.beginPath();
+          ctx.arc(120, yOffset, imgSize / 2, 0, 2 * Math.PI);
+          ctx.closePath();
+          ctx.clip();
+          ctx.drawImage(img, 108, yOffset - imgSize / 2, imgSize, imgSize);
+          ctx.restore();
+
+          // Draw the username
+          ctx.fillStyle = "white";
+          ctx.font = "bold 16px Arial";
+          ctx.textAlign = "left";
+          ctx.fillText(user.name, 150, yOffset + 4); // Username
+
+          // Draw the user's gift count at the far right
+          ctx.font = "14px Arial";
+          ctx.fillStyle = "yellow";
+          ctx.textAlign = "right";
+          ctx.fillText(`${user.giftCount || 0} points`, canvas.width - 20, yOffset + 4);  // Points at the right end
+        };
+      });
+
+      // Display Congratulations Text
+      ctx.font = "bold 24px Arial";
+      ctx.fillStyle = "white";
+      ctx.textAlign = "center";
+      ctx.fillText("Winner!", canvas.width / 2, 40);
+
+      ctx.font = "bold 18px Arial";
+      ctx.fillText(winningCountry.name, canvas.width / 2, 60);
+
+      // Reset the game after displaying the top 5 for 5 seconds
+      setTimeout(resetGame, 5000);
+    }
+
+
+    function resetGame() {
+      countries.forEach(country => {
+        country.size = initialCountrySize; // Ülke boyutunu sıfırla
+        country.users.forEach(user => {
+          user.giftCount = 0; // Kullanıcıların gift count değerini sıfırla
         });
-}
+      });
 
-setInterval(() => {
-    let activeUsers = userList.filter(user => user.active === 1);
-
-    checkUser(activeUsers);
-}, 30000); 
-
-connection.on('gift', (data) => {
-    let userName = data.uniqueId;
-    let giftCount = (data.diamondCount * data.repeatCount);
-    if (!isPendingStreak(data) && data.diamondCount > 0) {
-        let cleanNickname = data.nickname.replace(/[_\$-.]/g, '');
-        cleanNickname = cleanNickname.replace(/ə/g, 'e');
-        cleanNickname = cleanNickname.replace(/x/g, 'k');
-        if (cleanNickname.startsWith('user')) {
-            cleanNickname = 'user';
-        }
-
-        let userFound = false;
-
-        for (let i = 0; i < userList.length; i++) {
-            if (userList[i].username === userName) {
-                userFound = true;
-                const followCount = calculateFollowCount(giftCount);
-                userList[i].giftCount += giftCount;
-                userList[i].followCount += followCount;
-                userList[i].active = userList[i].giftCount >= 10 ? 1 : 0;
-
-                if (userList[i].active) {
-                    add_takip(userList[i].username, userList[i].followCount);
-                }
-
-                const responses = [
-                    { text: cleanNickname + " takipçilerini artırmağa devam ediyor ", language: "tr", type: 'like' },
-                    { text: cleanNickname + " Kendini gÖsteriyor her kes takip atsın", language: "tr", type: 'like' },
-                    { text: cleanNickname + " desteyiniz üçün teşükker ederiz.", language: "tr", type: 'like' },
-                    { text: cleanNickname + " ekranda yaşıl rengte görünen hesablara takipçi gönderilmeye başlamışdır ", language: "tr", type: 'like' },
-                    { text: cleanNickname + " takipçiler bir saatla dört saat arasında tamamen ulaşıyor ", language: "tr", type: 'like' },
-                    { text: cleanNickname + " on jetona on gönderiliyor ", language: "tr", type: 'like' },
-                    { text: cleanNickname + " katılmak için en az on jeton atmalısınız ", language: "tr", type: 'like' }
-                ];
-
-                function getRandomResponse(responses) {
-                    const randomIndex = Math.floor(Math.random() * responses.length);
-                    return responses[randomIndex];
-                }
-
-                const response = getRandomResponse(responses);
-
-                if (response && !usernames.has(cleanNickname)) {
-                    messagesQueue.push(response);
-                    processQueue();
-                }
-                lakaka1(cleanNickname);
-                break;
-            }
-        }
-
-        if (!userFound) {
-            const followCount = calculateFollowCount(giftCount);
-
-            const user = {
-                username: userName,
-                giftCount: giftCount,
-                followCount: followCount,
-                sendFollowCount: 0,
-                active: giftCount >= 10 ? true : false,
-                isNew: true
-            };
-
-            userList.push(user);
-            showModal(userName, followCount);
-            updateFollowersList();
-            scrollToBottom();
-            if (user.active) {
-                add_takip(user.username, user.followCount);
-            }
-        }
-    }
-});
-
-// async function callApiForFollowCount(username, followCount) {
-//     try {
-//         // Replace 'API_ENDPOINT_FOR_50' with the actual endpoint URL
-//         const response = await axios.post('API_ENDPOINT_FOR_50', {
-//             username: username,
-//             followCount: followCount
-//         });
-
-//         // Log the response for debugging purposes
-//         console.log(`API called for ${username} with followCount 50 or more. Response:`, response.data);
-//     } catch (error) {
-//         console.error(`Error calling API for ${username} with followCount 50 or more: ${error.message}`);
-//     }
-// }
-
-
-function calculateFollowCount(giftCount) {
-    return giftCount + (Math.floor(giftCount / 100) * 10);
-}
-
-
-// CheckOrder();
-function onEnd() {
-    messagesQueue.shift();
-    processQueue();
-}
-
-
-function processQueue() {
-    if (messagesQueue.length > 0) {
-        if (!responsiveVoice.isPlaying()) {
-            let message = messagesQueue[0].text;
-            let language = messagesQueue[0].language;
-
-            switch (language) {
-                case 'tr':
-                    responsiveVoice.speak(message, "Turkish Male", { rate: defaultRate, onend: onEnd });
-                    break;
-                case 'en':
-                    responsiveVoice.speak(message, "UK English Male", { rate: defaultRate, onend: onEnd });
-                    break;
-
-                default:
-                    responsiveVoice.speak(message, "Turkish Male", { rate: defaultRate, onend: onEnd });
-                    break;
-            }
-        } else {
-            messagesQueue.shift();
-            processQueue();
-        }
-    }
-}
-
-window.addEventListener("load", async () => {
-    try {
-        // Clear the console initially
-        console.clear();
-        
-        // Override console methods to prevent further logging
-        console.log = function() {};
-        console.warn = function() {};
-        console.error = function() {};
-        console.info = function() {};
-        console.debug = function() {};
-        
-        // Initialize and resume audio context
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        await audioContext.resume();
-    } catch (error) {
-        console.error("Otomatik seslendirme başlatılamadı:", error);
-    }
-});
-
-
-
-
-function lakaka1(username) {
-    if (usernames.has(username)) {
-        return;
+      finishGame = false;
+      countdownTime = 480; // Geri sayım süresini tekrar başlat
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // Canvas'ı temizle
+      progressCtx.clearRect(0, 0, progressCanvas.width, progressCanvas.height); // Progress canvas'ı temizle
+      animationID = setInterval(drawCountries, 1000 / 60); // Hareketi yeniden başlat
+      startCountdown(); // Geri sayımı yeniden başlat
+      usernames.clear(); // Kullanıcı haritasını sıfırla
     }
 
-    usernames.set(username, Date.now());
 
-    setTimeout(() => {
-        const timestamp = usernames.get(username);
-        if (Date.now() - timestamp >= 30000) {
-            usernames.delete(username);
-        }
-    }, 30000);
+    function updateProgressCanvas() {
+      progressCtx.clearRect(0, 0, progressCanvas.width, progressCanvas.height);
 
-}
+      const largestCountry = countries.reduce((max, country) => max.size > country.size ? max : country);
+      const progress = Math.min((largestCountry.size / maxCountrySize) * 100, 100); // Yüzdeyi hesapla
 
-function isPendingStreak(data) {
-    return data.giftType === 1 && !data.repeatEnd;
-}
+      // Ülkenin resmi
+      const img = images[largestCountry.name];
+      progressCtx.drawImage(img, 10, 20, 50, 50);
 
-connection.on('streamEnd', () => {
-    $('#stateText').text('Canlı sona çatdı.');
-})
+      // Ülkenin adı ve pozisyonu
+      progressCtx.fillStyle = "red";
+      progressCtx.font = "bold 20px Arial";
+      progressCtx.fillText(largestCountry.name, 110, 35);
+      progressCtx.font = "bold 16px Arial";
+      progressCtx.fillText("1st Place", 110, 55);
+
+      // Progress bar
+      progressCtx.fillStyle = "rgba(0, 0, 0, 0.1)";
+      progressCtx.fillRect(10, 80, 380, 12); // Progress bar arka planı
+
+      progressCtx.fillStyle = "#4CAF50";
+      progressCtx.fillRect(10, 80, progress * 3.8, 12); // İlerleme çubuğu genişliği
+
+      // Yüzde olarak gösterim
+      progressCtx.fillStyle = "#333";
+      progressCtx.font = "bold 14px Arial";
+      progressCtx.fillText(`${Math.floor(progress)}%`, 370, 90); // Yüzde değeri
+
+
+      // Yüzdelik rakamını altta, ortada göstermek için
+      progressCtx.font = "bold 20px Arial";
+      progressCtx.fillStyle = "#333";
+      progressCtx.textAlign = "center";
+      progressCtx.fillText(`${Math.floor(progress)}%`, (progressCanvas.width / 2) + 30, progressCanvas.height - 92);
+
+    }
+
+  </script>
+</body>
+
+</html>
